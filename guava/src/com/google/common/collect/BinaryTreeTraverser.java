@@ -252,4 +252,10 @@ public abstract class BinaryTreeTraverser<T> extends TreeTraverser<T> {
       return endOfData();
     }
   }
+
+  private static <T> void pushIfPresent(Deque<T> stack, Optional<T> node) {
+    if (node.isPresent()) {
+      stack.addLast(node.get());
+    }
+  }
 }
