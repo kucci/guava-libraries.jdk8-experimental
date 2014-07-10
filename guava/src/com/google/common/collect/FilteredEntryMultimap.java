@@ -58,8 +58,8 @@ class FilteredEntryMultimap<K, V> extends AbstractMultimap<K, V> implements Filt
   }
 
   @Override
-  public Predicate<? super Entry<K, V>> entryPredicate() {
-    return predicate;
+  public Predicate<Entry<K, V>> entryPredicate() {
+    return (Predicate) predicate;
   }
 
   @Override

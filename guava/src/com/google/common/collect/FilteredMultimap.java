@@ -30,5 +30,5 @@ import java.util.function.Predicate;
 interface FilteredMultimap<K, V> extends Multimap<K, V> {  
   Multimap<K, V> unfiltered();
 
-  Predicate<? super Entry<K, V>> entryPredicate();
+  Predicate<Entry<K, V>> entryPredicate();
 }

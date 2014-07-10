@@ -38,11 +38,11 @@ import javax.annotation.Nullable;
 @GwtCompatible
 class FilteredKeyMultimap<K, V> extends AbstractMultimap<K, V> implements FilteredMultimap<K, V> {
   final Multimap<K, V> unfiltered;
-  final Predicate<? super K> keyPredicate;
+  final Predicate<K> keyPredicate;
 
   FilteredKeyMultimap(Multimap<K, V> unfiltered, Predicate<? super K> keyPredicate) {
     this.unfiltered = checkNotNull(unfiltered);
-    this.keyPredicate = checkNotNull(keyPredicate);
+    this.keyPredicate = (Predicate) checkNotNull(keyPredicate);
   }
 
   @Override
@@ -51,8 +51,8 @@ class FilteredKeyMultimap<K, V> extends AbstractMultimap<K, V> implements Filter
   }
 
   @Override
-  public Predicate<? super Entry<K, V>> entryPredicate() {
-    return Maps.keyPredicateOnEntries(keyPredicate);
+  public Predicate<Entry<K, V>> entryPredicate() {
+    return entry -> keyPredicate.test(entry.getKey());
   }
 
   @Override

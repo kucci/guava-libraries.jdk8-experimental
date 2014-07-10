@@ -18,8 +18,6 @@ package com.google.common.collect;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Predicates.compose;
-import static com.google.common.base.Predicates.equalTo;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.CollectPreconditions.checkNonnegative;
@@ -58,8 +56,8 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
-import java.util.function.Predicate;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
@@ -82,39 +80,12 @@ import javax.annotation.Nullable;
 public final class Maps {
   private Maps() {}
 
-  private enum EntryFunction implements Function<Entry<?, ?>, Object> {
-    KEY {
-      @Override
-      @Nullable
-      public Object apply(Entry<?, ?> entry) {
-        return entry.getKey();
-      }
-    },
-    VALUE {
-      @Override
-      @Nullable
-      public Object apply(Entry<?, ?> entry) {
-        return entry.getValue();
-      }
-    };
-  }
-
-  @SuppressWarnings("unchecked")
-  static <K> Function<Entry<K, ?>, K> keyFunction() {
-    return (Function) EntryFunction.KEY;
-  }
-
-  @SuppressWarnings("unchecked")
-  static <V> Function<Entry<?, V>, V> valueFunction() {
-    return (Function) EntryFunction.VALUE;
-  }
-
   static <K, V> Iterator<K> keyIterator(Iterator<Entry<K, V>> entryIterator) {
-    return Iterators.transform(entryIterator, Maps.<K>keyFunction());
+    return Iterators.transform(entryIterator, Entry<K, V>::getKey);
   }
 
   static <K, V> Iterator<V> valueIterator(Iterator<Entry<K, V>> entryIterator) {
-    return Iterators.transform(entryIterator, Maps.<V>valueFunction());
+    return Iterators.transform(entryIterator, Entry<K, V>::getValue);
   }
 
   static <K, V> UnmodifiableIterator<V> valueIterator(
@@ -1997,11 +1968,13 @@ public final class Maps {
   }
 
   static <K> Predicate<Entry<K, ?>> keyPredicateOnEntries(Predicate<? super K> keyPredicate) {
-    return compose(keyPredicate, Maps.<K>keyFunction());
+    checkNotNull(keyPredicate);
+    return entry -> keyPredicate.test(entry.getKey());
   }
 
   static <V> Predicate<Entry<?, V>> valuePredicateOnEntries(Predicate<? super V> valuePredicate) {
-    return compose(valuePredicate, Maps.<V>valueFunction());
+    checkNotNull(valuePredicate);
+    return entry -> valuePredicate.test(entry.getValue());
   }
 
   /**
@@ -2469,19 +2442,18 @@ public final class Maps {
    */
   private static <K, V> Map<K, V> filterFiltered(AbstractFilteredMap<K, V> map,
       Predicate<? super Entry<K, V>> entryPredicate) {
-    return new FilteredEntryMap<K, V>(map.unfiltered,
-        Predicates.<Entry<K, V>>and(map.predicate, entryPredicate));
+    return new FilteredEntryMap<K, V>(map.unfiltered, map.predicate.and(entryPredicate));
   }
 
   private abstract static class AbstractFilteredMap<K, V>
       extends ImprovedAbstractMap<K, V> {
     final Map<K, V> unfiltered;
-    final Predicate<? super Entry<K, V>> predicate;
+    final Predicate<Entry<K, V>> predicate;
 
     AbstractFilteredMap(
         Map<K, V> unfiltered, Predicate<? super Entry<K, V>> predicate) {
       this.unfiltered = unfiltered;
-      this.predicate = predicate;
+      this.predicate = (Predicate) predicate;
     }
 
     boolean apply(@Nullable Object key, @Nullable V value) {
@@ -2529,25 +2501,24 @@ public final class Maps {
 
   private static final class FilteredMapValues<K, V> extends Maps.Values<K, V> {
     Map<K, V> unfiltered;
-    Predicate<? super Entry<K, V>> predicate;
+    Predicate<Entry<K, V>> predicate;
 
     FilteredMapValues(Map<K, V> filteredMap, Map<K, V> unfiltered,
         Predicate<? super Entry<K, V>> predicate) {
       super(filteredMap);
       this.unfiltered = unfiltered;
-      this.predicate = predicate;
+      this.predicate = (Predicate) predicate;
     }
 
     @Override public boolean remove(Object o) {
       return Iterables.removeFirstMatching(unfiltered.entrySet(),
-          Predicates.<Entry<K, V>>and(predicate, Maps.<V>valuePredicateOnEntries(equalTo(o))))
-          != null;
+          predicate.and(entry -> Objects.equal(entry.getValue(), o))) != null;
     }
 
     @Override
     public boolean removeIf(Predicate<? super V> valuePredicate) {
-      return Iterables.removeIf(unfiltered.entrySet(), Predicates.<Entry<K, V>>and(
-          predicate, Maps.<V>valuePredicateOnEntries(valuePredicate)));
+      return Iterables.removeIf(unfiltered.entrySet(),
+          predicate.and(entry -> valuePredicate.test(entry.getValue())));
     }
 
     @Override public boolean removeAll(Collection<?> collection) {
@@ -2659,8 +2630,8 @@ public final class Maps {
       }
 
       @Override public boolean removeIf(Predicate<? super K> keyPredicate) {
-        return Iterables.removeIf(unfiltered.entrySet(), Predicates.<Entry<K, V>>and(
-            predicate, Maps.<K>keyPredicateOnEntries(keyPredicate)));
+        return Iterables.removeIf(unfiltered.entrySet(),
+            predicate.and(entry -> keyPredicate.test(entry.getKey())));
       }
 
       @Override
@@ -2691,9 +2662,7 @@ public final class Maps {
   private static <K, V> SortedMap<K, V> filterFiltered(
       FilteredEntrySortedMap<K, V> map,
       Predicate<? super Entry<K, V>> entryPredicate) {
-    Predicate<Entry<K, V>> predicate
-        = Predicates.and(map.predicate, entryPredicate);
-    return new FilteredEntrySortedMap<K, V>(map.sortedMap(), predicate);
+    return new FilteredEntrySortedMap<K, V>(map.sortedMap(), map.predicate.and(entryPredicate));
   }
 
   private static class FilteredEntrySortedMap<K, V>
@@ -2793,9 +2762,7 @@ public final class Maps {
   private static <K, V> NavigableMap<K, V> filterFiltered(
       FilteredEntryNavigableMap<K, V> map,
       Predicate<? super Entry<K, V>> entryPredicate) {
-    Predicate<Entry<K, V>> predicate
-        = Predicates.and(map.entryPredicate, entryPredicate);
-    return new FilteredEntryNavigableMap<K, V>(map.unfiltered, predicate);
+    return new FilteredEntryNavigableMap<K, V>(map.unfiltered, map.entryPredicate.and(entryPredicate));
   }
 
   @GwtIncompatible("NavigableMap")
@@ -2807,13 +2774,13 @@ public final class Maps {
      */
 
     private final NavigableMap<K, V> unfiltered;
-    private final Predicate<? super Entry<K, V>> entryPredicate;
+    private final Predicate<Entry<K, V>> entryPredicate;
     private final Map<K, V> filteredDelegate;
 
     FilteredEntryNavigableMap(
         NavigableMap<K, V> unfiltered, Predicate<? super Entry<K, V>> entryPredicate) {
       this.unfiltered = checkNotNull(unfiltered);
-      this.entryPredicate = entryPredicate;
+      this.entryPredicate = (Predicate) entryPredicate;
       this.filteredDelegate = new FilteredEntryMap<K, V>(unfiltered, entryPredicate);
     }
 
@@ -2828,13 +2795,13 @@ public final class Maps {
         @Override
         public boolean removeAll(Collection<?> c) {
           return Iterators.removeIf(unfiltered.entrySet().iterator(),
-              Predicates.<Entry<K, V>>and(entryPredicate, Maps.<K>keyPredicateOnEntries(in(c))));
+              entryPredicate.and(entry -> c.contains(entry.getKey())));
         }
 
         @Override
         public boolean retainAll(Collection<?> c) {
-          return Iterators.removeIf(unfiltered.entrySet().iterator(), Predicates.<Entry<K, V>>and(
-              entryPredicate, Maps.<K>keyPredicateOnEntries(not(in(c)))));
+          return Iterators.removeIf(unfiltered.entrySet().iterator(),
+              entryPredicate.and(entry -> !c.contains(entry.getKey())));
         }
       };
     }
@@ -2934,8 +2901,7 @@ public final class Maps {
    */
   private static <K, V> BiMap<K, V> filterFiltered(
       FilteredEntryBiMap<K, V> map, Predicate<? super Entry<K, V>> entryPredicate) {
-    Predicate<Entry<K, V>> predicate = Predicates.and(map.predicate, entryPredicate);
-    return new FilteredEntryBiMap<K, V>(map.unfiltered(), predicate);
+    return new FilteredEntryBiMap<K, V>(map.unfiltered(), map.predicate.and(entryPredicate));
   }
 
   static final class FilteredEntryBiMap<K, V> extends FilteredEntryMap<K, V>

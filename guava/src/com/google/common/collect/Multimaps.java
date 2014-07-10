@@ -1762,8 +1762,7 @@ public final class Multimaps {
       return filterKeys((ListMultimap<K, V>) unfiltered, keyPredicate);
     } else if (unfiltered instanceof FilteredKeyMultimap) {
       FilteredKeyMultimap<K, V> prev = (FilteredKeyMultimap<K, V>) unfiltered;
-      return new FilteredKeyMultimap<K, V>(prev.unfiltered,
-          Predicates.and(prev.keyPredicate, keyPredicate));
+      return new FilteredKeyMultimap<K, V>(prev.unfiltered, prev.keyPredicate.and(keyPredicate));
     } else if (unfiltered instanceof FilteredMultimap) {
       FilteredMultimap<K, V> prev = (FilteredMultimap<K, V>) unfiltered;
       return filterFiltered(prev, Maps.<K>keyPredicateOnEntries(keyPredicate));
@@ -1807,7 +1806,7 @@ public final class Multimaps {
     if (unfiltered instanceof FilteredKeySetMultimap) {
       FilteredKeySetMultimap<K, V> prev = (FilteredKeySetMultimap<K, V>) unfiltered;
       return new FilteredKeySetMultimap<K, V>(prev.unfiltered(),
-          Predicates.and(prev.keyPredicate, keyPredicate));
+          prev.keyPredicate.and(keyPredicate));
     } else if (unfiltered instanceof FilteredSetMultimap) {
       FilteredSetMultimap<K, V> prev = (FilteredSetMultimap<K, V>) unfiltered;
       return filterFiltered(prev, Maps.<K>keyPredicateOnEntries(keyPredicate));
@@ -1851,7 +1850,7 @@ public final class Multimaps {
     if (unfiltered instanceof FilteredKeyListMultimap) {
       FilteredKeyListMultimap<K, V> prev = (FilteredKeyListMultimap<K, V>) unfiltered;
       return new FilteredKeyListMultimap<K, V>(prev.unfiltered(),
-          Predicates.and(prev.keyPredicate, keyPredicate));
+          prev.keyPredicate.and(keyPredicate));
     } else {
       return new FilteredKeyListMultimap<K, V>(unfiltered, keyPredicate);
     }
@@ -2011,9 +2010,8 @@ public final class Multimaps {
    */
   private static <K, V> Multimap<K, V> filterFiltered(FilteredMultimap<K, V> multimap,
       Predicate<? super Entry<K, V>> entryPredicate) {
-    Predicate<Entry<K, V>> predicate
-        = Predicates.and(multimap.entryPredicate(), entryPredicate);
-    return new FilteredEntryMultimap<K, V>(multimap.unfiltered(), predicate);
+    return new FilteredEntryMultimap<K, V>(multimap.unfiltered(),
+        multimap.entryPredicate().and(entryPredicate));
   }
 
   /**
