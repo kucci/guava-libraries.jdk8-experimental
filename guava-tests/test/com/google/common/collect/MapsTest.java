@@ -40,7 +40,6 @@ import junit.framework.TestCase;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -106,55 +105,6 @@ public class MapsTest extends TestCase {
       fail("Negative expected size must result in IllegalArgumentException");
     } catch (IllegalArgumentException ex) {
     }
-  }
-
-  /**
-   * Tests that nHMWES makes hash maps large enough that adding the expected
-   * number of elements won't cause a rehash.
-   *
-   * As of jdk7u40, HashMap has an empty-map optimization.  The argument to
-   * new HashMap(int) is noted, but the initial table is a zero-length array.
-   *
-   * This test may fail miserably on non-OpenJDK environments...
-   */
-  @GwtIncompatible("reflection")
-  public void testNewHashMapWithExpectedSize_wontGrow() throws Exception {
-    // before jdk7u40: creates one-bucket table
-    // after  jdk7u40: creates empty table
-    assertTrue(bucketsOf(Maps.newHashMapWithExpectedSize(0)) <= 1);
-
-    for (int size = 1; size < 200; size++) {
-      HashMap<Integer, Void> map1 = Maps.newHashMapWithExpectedSize(size);
-
-      // Only start measuring table size after the first element inserted, to
-      // deal with empty-map optimization.
-      map1.put(0, null);
-
-      int initialBuckets = bucketsOf(map1);
-
-      for (int i = 1; i < size; i++) {
-        map1.put(i, null);
-      }
-      assertEquals("table size after adding " + size + " elements",
-          initialBuckets, bucketsOf(map1));
-
-      /*
-       * Something slightly different happens when the entries are added all at
-       * once; make sure that passes too.
-       */
-      HashMap<Integer, Void> map2 = Maps.newHashMapWithExpectedSize(size);
-      map2.putAll(map1);
-      assertEquals("table size after adding " + size + "elements",
-          initialBuckets, bucketsOf(map2));
-    }
-  }
-
-  @GwtIncompatible("reflection")
-  private static int bucketsOf(HashMap<?, ?> hashMap) throws Exception {
-    Field tableField = HashMap.class.getDeclaredField("table");
-    tableField.setAccessible(true);
-    Object[] table = (Object[]) tableField.get(hashMap);
-    return table.length;
   }
 
   public void testCapacityForLargeSizes() {
