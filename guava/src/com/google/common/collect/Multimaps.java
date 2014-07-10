@@ -1180,8 +1180,7 @@ public final class Multimaps {
     }
 
     Collection<V2> transform(K key, Collection<V1> values) {
-      Function<? super V1, V2> function = 
-          Maps.asValueToValueFunction(transformer, key);
+      Function<V1, V2> function = v1 -> transformer.apply(key, v1);
       if (values instanceof List) {
         return Lists.transform((List<V1>) values, function);
       } else {
