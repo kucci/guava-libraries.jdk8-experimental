@@ -332,12 +332,9 @@ public final class Collections2 {
   static String toStringImpl(final Collection<?> collection) {
     StringBuilder sb
         = newStringBuilderForCollection(collection.size()).append('[');
-    STANDARD_JOINER.appendTo(
-        sb, Iterables.transform(collection, new Function<Object, Object>() {
-          @Override public Object apply(Object input) {
-            return input == collection ? "(this Collection)" : input;
-          }
-        }));
+    STANDARD_JOINER.appendTo(sb,
+        Iterables.transform(collection,
+            input -> input == collection ? "(this Collection)" : input));
     return sb.append(']').toString();
   }
 
