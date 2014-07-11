@@ -19,11 +19,11 @@ package com.google.common.collect;
 import static com.google.common.collect.CollectPreconditions.checkNonnegative;
 
 import com.google.common.annotations.GwtCompatible;
-import com.google.common.base.Supplier;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
@@ -54,25 +54,14 @@ import javax.annotation.Nullable;
  */
 @GwtCompatible(serializable = true)
 public class HashBasedTable<R, C, V> extends StandardTable<R, C, V> {
-  private static class Factory<C, V>
-      implements Supplier<Map<C, V>>, Serializable {
-    final int expectedSize;
-    Factory(int expectedSize) {
-      this.expectedSize = expectedSize;
-    }
-    @Override
-    public Map<C, V> get() {
-      return Maps.newHashMapWithExpectedSize(expectedSize);
-    }
-    private static final long serialVersionUID = 0;
-  }
 
   /**
    * Creates an empty {@code HashBasedTable}.
    */
   public static <R, C, V> HashBasedTable<R, C, V> create() {
     return new HashBasedTable<R, C, V>(
-        new HashMap<R, Map<C, V>>(), new Factory<C, V>(0));
+        new HashMap<R, Map<C, V>>(),
+        (Serializable & Supplier<Map<C, V>>) () -> new HashMap<C, V>(0));
   }
 
   /**
@@ -90,7 +79,8 @@ public class HashBasedTable<R, C, V> extends StandardTable<R, C, V> {
     Map<R, Map<C, V>> backingMap =
         Maps.newHashMapWithExpectedSize(expectedRows);
     return new HashBasedTable<R, C, V>(
-        backingMap, new Factory<C, V>(expectedCellsPerRow));
+        backingMap,
+        (Serializable & Supplier<Map<C, V>>) () -> new HashMap<C, V>(expectedCellsPerRow));
   }
 
   /**
@@ -108,7 +98,7 @@ public class HashBasedTable<R, C, V> extends StandardTable<R, C, V> {
     return result;
   }
 
-  HashBasedTable(Map<R, Map<C, V>> backingMap, Factory<C, V> factory) {
+  HashBasedTable(Map<R, Map<C, V>> backingMap, Supplier<Map<C, V>> factory) {
     super(backingMap, factory);
   }
 

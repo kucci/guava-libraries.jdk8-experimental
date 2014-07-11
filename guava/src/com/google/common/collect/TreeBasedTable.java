@@ -21,8 +21,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtCompatible;
-import com.google.common.base.Function;
-import com.google.common.base.Supplier;
 
 import java.io.Serializable;
 import java.util.Comparator;
@@ -33,6 +31,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
@@ -78,19 +77,6 @@ import javax.annotation.Nullable;
 @Beta
 public class TreeBasedTable<R, C, V> extends StandardRowSortedTable<R, C, V> {
   private final Comparator<? super C> columnComparator;
-
-  private static class Factory<C, V>
-      implements Supplier<TreeMap<C, V>>, Serializable {
-    final Comparator<? super C> comparator;
-    Factory(Comparator<? super C> comparator) {
-      this.comparator = comparator;
-    }
-    @Override
-    public TreeMap<C, V> get() {
-      return new TreeMap<C, V>(comparator);
-    }
-    private static final long serialVersionUID = 0;
-  }
 
   /**
    * Creates an empty {@code TreeBasedTable} that uses the natural orderings
@@ -138,7 +124,7 @@ public class TreeBasedTable<R, C, V> extends StandardRowSortedTable<R, C, V> {
   TreeBasedTable(Comparator<? super R> rowComparator,
       Comparator<? super C> columnComparator) {
     super(new TreeMap<R, Map<C, V>>(rowComparator),
-        new Factory<C, V>(columnComparator));
+        (Serializable & Supplier<TreeMap<C, V>>) () -> new TreeMap<C, V>(columnComparator));
     this.columnComparator = columnComparator;
   }
 
@@ -317,13 +303,9 @@ public class TreeBasedTable<R, C, V> extends StandardRowSortedTable<R, C, V> {
     final Comparator<? super C> comparator = columnComparator();
 
     final Iterator<C> merged =
-        Iterators.mergeSorted(Iterables.transform(backingMap.values(),
-            new Function<Map<C, V>, Iterator<C>>() {
-              @Override
-              public Iterator<C> apply(Map<C, V> input) {
-                return input.keySet().iterator();
-              }
-            }), comparator);
+        Iterators.mergeSorted(
+            Iterables.transform(backingMap.values(), input -> input.keySet().iterator()),
+            comparator);
 
     return new AbstractIterator<C>() {
       C lastValue;
