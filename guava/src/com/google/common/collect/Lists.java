@@ -36,7 +36,6 @@ import com.google.common.primitives.Ints;
 import java.io.Serializable;
 import java.math.RoundingMode;
 import java.util.AbstractList;
-import java.util.AbstractSequentialList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -509,7 +508,7 @@ public final class Lists {
       List<F> fromList, Function<? super F, ? extends T> function) {
     return (fromList instanceof RandomAccess)
         ? new TransformingRandomAccessList<F, T>(fromList, function)
-        : new TransformingSequentialList<F, T>(fromList, function);
+        : new TransformingList<F, T>(fromList, function);
   }
 
   /**
@@ -517,57 +516,12 @@ public final class Lists {
    *
    * @see Lists#transform
    */
-  private static class TransformingSequentialList<F, T>
-      extends AbstractSequentialList<T> implements Serializable {
+  private static class TransformingList<F, T>
+      extends AbstractList<T> implements Serializable {
     final List<F> fromList;
     final Function<? super F, ? extends T> function;
 
-    TransformingSequentialList(
-        List<F> fromList, Function<? super F, ? extends T> function) {
-      this.fromList = checkNotNull(fromList);
-      this.function = checkNotNull(function);
-    }
-    /**
-     * The default implementation inherited is based on iteration and removal of
-     * each element which can be overkill. That's why we forward this call
-     * directly to the backing list.
-     */
-    @Override public void clear() {
-      fromList.clear();
-    }
-    @Override public int size() {
-      return fromList.size();
-    }
-    @Override public ListIterator<T> listIterator(final int index) {
-      return Iterators.transform(fromList.listIterator(index), function);
-    }
-    @Override public Stream<T> stream() {
-      return fromList.stream().map(function);
-    }
-    @Override public Stream<T> parallelStream() {
-      return fromList.parallelStream().map(function);
-    }
-    @Override public void forEach(Consumer<? super T> consumer) {
-      checkNotNull(consumer);
-      fromList.forEach(f -> consumer.accept(function.apply(f)));
-    }
-    private static final long serialVersionUID = 0;
-  }
-
-  /**
-   * Implementation of a transforming random access list. We try to make as many
-   * of these methods pass-through to the source list as possible so that the
-   * performance characteristics of the source list and transformed list are
-   * similar.
-   *
-   * @see Lists#transform
-   */
-  private static class TransformingRandomAccessList<F, T>
-      extends AbstractList<T> implements RandomAccess, Serializable {
-    final List<F> fromList;
-    final Function<? super F, ? extends T> function;
-
-    TransformingRandomAccessList(
+    TransformingList(
         List<F> fromList, Function<? super F, ? extends T> function) {
       this.fromList = checkNotNull(fromList);
       this.function = checkNotNull(function);
@@ -599,6 +553,20 @@ public final class Lists {
     }
     @Override public int size() {
       return fromList.size();
+    }
+    private static final long serialVersionUID = 0;
+  }
+
+  /**
+   * Implementation of a transforming random access list.
+   *
+   * @see Lists#transform
+   */
+  private static class TransformingRandomAccessList<F, T> extends TransformingList<F, T>
+      implements RandomAccess {
+    TransformingRandomAccessList(
+        List<F> fromList, Function<? super F, ? extends T> function) {
+      super(fromList, function);
     }
     private static final long serialVersionUID = 0;
   }
@@ -706,6 +674,14 @@ public final class Lists {
       return string.charAt(index);
     }
 
+    @Override public Stream<Character> stream() {
+      return string.chars().mapToObj(i -> (char) i);
+    }
+
+    @Override public Stream<Character> parallelStream() {
+      return stream().parallel();
+    }
+
     @Override public int size() {
       return string.length();
     }
@@ -737,6 +713,14 @@ public final class Lists {
     @Override public Character get(int index) {
       checkElementIndex(index, size()); // for GWT
       return sequence.charAt(index);
+    }
+
+    @Override public Stream<Character> stream() {
+      return sequence.chars().mapToObj(i -> (char) i);
+    }
+
+    @Override public Stream<Character> parallelStream() {
+      return stream().parallel();
     }
 
     @Override public int size() {
