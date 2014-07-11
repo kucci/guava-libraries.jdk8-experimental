@@ -19,10 +19,6 @@ package com.google.common.collect;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Predicates.equalTo;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.instanceOf;
-import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.CollectPreconditions.checkRemove;
 
 import com.google.common.annotations.Beta;
@@ -179,7 +175,8 @@ public final class Iterators {
    * Returns {@code true} if {@code iterator} contains {@code element}.
    */
   public static boolean contains(Iterator<?> iterator, @Nullable Object element) {
-    return any(iterator, equalTo(element));
+    // TODO(user): figure out why the explicit <Object> is necessary
+    return any(iterator, Predicate.<Object>isEqual(element));
   }
 
   /**
@@ -354,7 +351,13 @@ public final class Iterators {
    * @see Collections#frequency
    */
   public static int frequency(Iterator<?> iterator, @Nullable Object element) {
-    return size(filter(iterator, equalTo(element)));
+    int count = 0;
+    while (iterator.hasNext()) {
+      if (Objects.equal(iterator.next(), element)) {
+        count++;
+      }
+    }
+    return count;
   }
 
   /**
@@ -654,7 +657,7 @@ public final class Iterators {
   @GwtIncompatible("Class.isInstance")
   public static <T> UnmodifiableIterator<T> filter(
       Iterator<?> unfiltered, Class<T> type) {
-    return (UnmodifiableIterator<T>) filter(unfiltered, instanceOf(type));
+    return (UnmodifiableIterator<T>) filter(unfiltered, type::isInstance);
   }
 
   /**
@@ -1278,12 +1281,7 @@ public final class Iterators {
       // A comparator that's used by the heap, allowing the heap
       // to be sorted based on the top of each iterator.
       Comparator<PeekingIterator<T>> heapComparator =
-          new Comparator<PeekingIterator<T>>() {
-            @Override
-            public int compare(PeekingIterator<T> o1, PeekingIterator<T> o2) {
-              return itemComparator.compare(o1.peek(), o2.peek());
-            }
-          };
+          Comparator.comparing(PeekingIterator<T>::peek, itemComparator);
 
       queue = new PriorityQueue<PeekingIterator<T>>(2, heapComparator);
 
