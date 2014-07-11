@@ -18,14 +18,10 @@ package com.google.common.collect;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Predicates.compose;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.not;
 
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.base.Objects;
-import com.google.common.base.Predicate;
 
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -38,6 +34,7 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
@@ -555,7 +552,7 @@ public final class TreeRangeMap<K extends Comparable, V> implements RangeMap<K, 
           
           @Override
           public boolean retainAll(Collection<?> c) {
-            return removeEntryIf(not(in(c)));
+            return removeEntryIf(entry -> !c.contains(entry));
           }
           
           @Override
