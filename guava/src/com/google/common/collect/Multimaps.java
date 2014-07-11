@@ -23,7 +23,6 @@ import static com.google.common.collect.CollectPreconditions.checkRemove;
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
-import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.base.Supplier;
 
@@ -44,6 +43,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
@@ -513,12 +513,7 @@ public final class Multimaps {
       Map<K, Collection<V>> result = map;
       if (result == null) {
         result = map = Collections.unmodifiableMap(
-            Maps.transformValues(delegate.asMap(), new Function<Collection<V>, Collection<V>>() {
-              @Override
-              public Collection<V> apply(Collection<V> collection) {
-                return unmodifiableValueCollection(collection);
-              }
-            }));
+            Maps.transformValues(delegate.asMap(), Multimaps::unmodifiableValueCollection));
       }
       return result;
     }
@@ -1680,12 +1675,7 @@ public final class Multimaps {
       }
 
       @Override public Iterator<Entry<K, Collection<V>>> iterator() {
-        return Maps.asMapEntryIterator(multimap.keySet(), new Function<K, Collection<V>>() {
-          @Override
-          public Collection<V> apply(K key) {
-            return multimap.get(key);
-          }
-        });
+        return Maps.asMapEntryIterator(multimap.keySet(), multimap::get);
       }
 
       @Override public boolean remove(Object o) {
