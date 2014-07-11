@@ -24,7 +24,6 @@ import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.base.Predicates;
-import com.google.common.base.Supplier;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -45,6 +44,7 @@ import java.util.SortedSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
