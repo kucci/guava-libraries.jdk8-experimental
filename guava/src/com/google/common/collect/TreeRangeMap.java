@@ -488,7 +488,7 @@ public final class TreeRangeMap<K extends Comparable, V> implements RangeMap<K, 
       private boolean removeEntryIf(Predicate<? super Entry<Range<K>, V>> predicate) {
         List<Range<K>> toRemove = Lists.newArrayList();
         for (Entry<Range<K>, V> entry : entrySet()) {
-          if (predicate.apply(entry)) {
+          if (predicate.test(entry)) {
             toRemove.add(entry.getKey());
           }
         }
