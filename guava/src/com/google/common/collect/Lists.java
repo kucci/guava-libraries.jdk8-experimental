@@ -529,6 +529,12 @@ public final class Lists {
     @Override public void clear() {
       fromList.clear();
     }
+    @Override public Iterator<T> iterator() {
+      return listIterator();
+    }
+    @Override public ListIterator<T> listIterator() {
+      return listIterator(0);
+    }
     @Override public ListIterator<T> listIterator(final int index) {
       return Iterators.transform(fromList.listIterator(index), function);
     }
