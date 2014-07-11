@@ -21,9 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtCompatible;
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
-import com.google.common.base.Supplier;
 import com.google.common.collect.Table.Cell;
 
 import java.io.Serializable;
@@ -34,6 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
@@ -235,20 +235,10 @@ public final class Tables {
       return original.values();
     }
 
-    // Will cast TRANSPOSE_CELL to a type that always succeeds
-    private static final Function<Cell<?, ?, ?>, Cell<?, ?, ?>> TRANSPOSE_CELL =
-        new Function<Cell<?, ?, ?>, Cell<?, ?, ?>>() {
-          @Override
-          public Cell<?, ?, ?> apply(Cell<?, ?, ?> cell) {
-            return immutableCell(
-                cell.getColumnKey(), cell.getRowKey(), cell.getValue());
-          }
-        };
-
-    @SuppressWarnings("unchecked")
     @Override
     Iterator<Cell<C, R, V>> cellIterator() {
-      return Iterators.transform(original.cellSet().iterator(), (Function) TRANSPOSE_CELL);
+      return Iterators.transform(original.cellSet().iterator(),
+          cell -> immutableCell(cell.getColumnKey(), cell.getRowKey(), cell.getValue()));
     }
   }
 
@@ -386,19 +376,11 @@ public final class Tables {
       return Maps.transformValues(fromTable.column(columnKey), function);
     }
 
-    Function<Cell<R, C, V1>, Cell<R, C, V2>> cellFunction() {
-      return new Function<Cell<R, C, V1>, Cell<R, C, V2>>() {
-        @Override public Cell<R, C, V2> apply(Cell<R, C, V1> cell) {
-          return immutableCell(
-              cell.getRowKey(), cell.getColumnKey(),
-              function.apply(cell.getValue()));
-        }
-      };
-    }
-
     @Override
     Iterator<Cell<R, C, V2>> cellIterator() {
-      return Iterators.transform(fromTable.cellSet().iterator(), cellFunction());
+      return Iterators.transform(fromTable.cellSet().iterator(),
+          cell -> immutableCell(cell.getRowKey(), cell.getColumnKey(),
+              function.apply(cell.getValue())));
     }
 
     @Override public Set<R> rowKeySet() {
@@ -415,23 +397,12 @@ public final class Tables {
     }
 
     @Override public Map<R, Map<C, V2>> rowMap() {
-      Function<Map<C, V1>, Map<C, V2>> rowFunction =
-          new Function<Map<C, V1>, Map<C, V2>>() {
-            @Override public Map<C, V2> apply(Map<C, V1> row) {
-              return Maps.transformValues(row, function);
-            }
-          };
-      return Maps.transformValues(fromTable.rowMap(), rowFunction);
+      return Maps.transformValues(fromTable.rowMap(), row -> Maps.transformValues(row, function));
     }
 
     @Override public Map<C, Map<R, V2>> columnMap() {
-      Function<Map<R, V1>, Map<R, V2>> columnFunction =
-          new Function<Map<R, V1>, Map<R, V2>>() {
-            @Override public Map<R, V2> apply(Map<R, V1> column) {
-              return Maps.transformValues(column, function);
-            }
-          };
-      return Maps.transformValues(fromTable.columnMap(), columnFunction);
+      return Maps.transformValues(fromTable.columnMap(),
+          column -> Maps.transformValues(column, function));
     }
   }
   
@@ -491,8 +462,8 @@ public final class Tables {
 
     @Override
     public Map<C, Map<R, V>> columnMap() {
-      Function<Map<R, V>, Map<R, V>> wrapper = unmodifiableWrapper();
-      return Collections.unmodifiableMap(Maps.transformValues(super.columnMap(), wrapper));
+      return Collections.unmodifiableMap(Maps.transformValues(super.columnMap(),
+          Collections::unmodifiableMap));
     }
 
     @Override
@@ -522,8 +493,8 @@ public final class Tables {
 
     @Override
     public Map<R, Map<C, V>> rowMap() {
-      Function<Map<C, V>, Map<C, V>> wrapper = unmodifiableWrapper();
-      return Collections.unmodifiableMap(Maps.transformValues(super.rowMap(), wrapper));
+      return Collections.unmodifiableMap(Maps.transformValues(super.rowMap(),
+          Collections::unmodifiableMap));
     }
 
     @Override
@@ -571,8 +542,8 @@ public final class Tables {
 
     @Override
     public SortedMap<R, Map<C, V>> rowMap() {
-      Function<Map<C, V>, Map<C, V>> wrapper = unmodifiableWrapper();
-      return Collections.unmodifiableSortedMap(Maps.transformValues(delegate().rowMap(), wrapper));
+      return Collections.unmodifiableSortedMap(Maps.transformValues(delegate().rowMap(),
+          Collections::unmodifiableMap));
     }
 
     @Override
@@ -582,19 +553,6 @@ public final class Tables {
 
     private static final long serialVersionUID = 0;
   }
-
-  @SuppressWarnings("unchecked")
-  private static <K, V> Function<Map<K, V>, Map<K, V>> unmodifiableWrapper() {
-    return (Function) UNMODIFIABLE_WRAPPER;
-  }
-
-  private static final Function<? extends Map<?, ?>, ? extends Map<?, ?>> UNMODIFIABLE_WRAPPER =
-      new Function<Map<Object, Object>, Map<Object, Object>>() {
-        @Override
-        public Map<Object, Object> apply(Map<Object, Object> input) {
-          return Collections.unmodifiableMap(input);
-        }
-      };
       
   static boolean equalsImpl(Table<?, ?, ?> table, @Nullable Object obj) {
     if (obj == table) {

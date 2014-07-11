@@ -19,13 +19,13 @@ package com.google.common.collect;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.annotations.GwtCompatible;
-import com.google.common.base.Supplier;
 
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.function.Supplier;
 
 /**
  * Implementation of {@code Table} whose iteration ordering across row keys is

@@ -25,8 +25,6 @@ import static com.google.common.collect.Maps.safeContainsKey;
 import static com.google.common.collect.Maps.safeGet;
 
 import com.google.common.annotations.GwtCompatible;
-import com.google.common.base.Function;
-import com.google.common.base.Supplier;
 import com.google.common.collect.Maps.ImprovedAbstractMap;
 import com.google.common.collect.Sets.ImprovedAbstractSet;
 
@@ -38,6 +36,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
@@ -719,12 +718,7 @@ class StandardTable<R, C, V> extends AbstractTable<R, C, V> implements Serializa
 
     class EntrySet extends TableSet<Entry<R, Map<C, V>>> {
       @Override public Iterator<Entry<R, Map<C, V>>> iterator() {
-        return Maps.asMapEntryIterator(backingMap.keySet(), new Function<R, Map<C, V>>() {
-          @Override
-          public Map<C, V> apply(R rowKey) {
-            return row(rowKey);
-          }
-        });
+        return Maps.asMapEntryIterator(backingMap.keySet(), StandardTable.this::row);
       }
 
       @Override public int size() {
@@ -790,12 +784,7 @@ class StandardTable<R, C, V> extends AbstractTable<R, C, V> implements Serializa
 
     class ColumnMapEntrySet extends TableSet<Entry<C, Map<R, V>>> {
       @Override public Iterator<Entry<C, Map<R, V>>> iterator() {
-        return Maps.asMapEntryIterator(columnKeySet(), new Function<C, Map<R, V>>() {
-          @Override
-          public Map<R, V> apply(C columnKey) {
-            return column(columnKey);
-          }
-        });
+        return Maps.asMapEntryIterator(columnKeySet(), StandardTable.this::column);
       }
 
       @Override public int size() {
