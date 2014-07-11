@@ -440,21 +440,8 @@ public final class Iterables {
     return new FluentIterable<T>() {
       @Override
       public Iterator<T> iterator() {
-        return Iterators.concat(iterators(inputs));
-      }
-    };
-  }
-
-  /**
-   * Returns an iterator over the iterators of the given iterables.
-   */
-  private static <T> Iterator<Iterator<? extends T>> iterators(
-      Iterable<? extends Iterable<? extends T>> iterables) {
-    return new TransformedIterator<Iterable<? extends T>, Iterator<? extends T>>(
-        iterables.iterator()) {
-      @Override
-      Iterator<? extends T> transform(Iterable<? extends T> from) {
-        return from.iterator();
+        return Iterators.concat(
+            Iterators.transform(inputs.iterator(), Iterable<? extends T>::iterator));
       }
     };
   }
@@ -958,22 +945,10 @@ public final class Iterables {
       @Override
       public Iterator<T> iterator() {
         return Iterators.mergeSorted(
-            Iterables.transform(iterables, Iterables.<T>toIterator()),
+            Iterables.transform(iterables, Iterable<? extends T>::iterator),
             comparator);
       }
     };
     return new UnmodifiableIterable<T>(iterable);
-  }
-
-  // TODO(user): Is this the best place for this? Move to fluent functions?
-  // Useful as a public method?
-  private static <T> Function<Iterable<? extends T>, Iterator<? extends T>>
-      toIterator() {
-    return new Function<Iterable<? extends T>, Iterator<? extends T>>() {
-      @Override
-      public Iterator<? extends T> apply(Iterable<? extends T> iterable) {
-        return iterable.iterator();
-      }
-    };
   }
 }
