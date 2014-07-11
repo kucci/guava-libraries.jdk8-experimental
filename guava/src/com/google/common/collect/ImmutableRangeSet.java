@@ -114,7 +114,7 @@ public final class ImmutableRangeSet<C extends Comparable> extends AbstractRange
   @Override
   public boolean encloses(Range<C> otherRange) {
     int index = SortedLists.binarySearch(ranges,
-        Range.<C>lowerBoundFn(),
+        Range<C>::lowerBound,
         otherRange.lowerBound,
         Ordering.natural(),
         ANY_PRESENT,
@@ -125,7 +125,7 @@ public final class ImmutableRangeSet<C extends Comparable> extends AbstractRange
   @Override
   public Range<C> rangeContaining(C value) {
     int index = SortedLists.binarySearch(ranges,
-        Range.<C>lowerBoundFn(),
+        Range<C>::lowerBound,
         Cut.belowValue(value),
         Ordering.natural(),
         ANY_PRESENT,
@@ -267,7 +267,7 @@ public final class ImmutableRangeSet<C extends Comparable> extends AbstractRange
     final int fromIndex;
     if (range.hasLowerBound()) {
       fromIndex = SortedLists.binarySearch(
-          ranges, Range.<C>upperBoundFn(), range.lowerBound, KeyPresentBehavior.FIRST_AFTER,
+          ranges, Range<C>::upperBound, range.lowerBound, KeyPresentBehavior.FIRST_AFTER,
           KeyAbsentBehavior.NEXT_HIGHER);
     } else {
       fromIndex = 0;
@@ -276,7 +276,7 @@ public final class ImmutableRangeSet<C extends Comparable> extends AbstractRange
     int toIndex;
     if (range.hasUpperBound()) {
       toIndex = SortedLists.binarySearch(
-          ranges, Range.<C>lowerBoundFn(), range.upperBound, KeyPresentBehavior.FIRST_PRESENT,
+          ranges, Range<C>::lowerBound, range.upperBound, KeyPresentBehavior.FIRST_PRESENT,
           KeyAbsentBehavior.NEXT_HIGHER);
     } else {
       toIndex = ranges.size();

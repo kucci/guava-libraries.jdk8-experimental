@@ -162,7 +162,7 @@ public class ImmutableRangeMap<K extends Comparable<?>, V> implements RangeMap<K
   @Override
   @Nullable
   public V get(K key) {
-    int index = SortedLists.binarySearch(ranges, Range.<K>lowerBoundFn(),
+    int index = SortedLists.binarySearch(ranges, Range<K>::lowerBound,
         Cut.belowValue(key), KeyPresentBehavior.ANY_PRESENT, KeyAbsentBehavior.NEXT_LOWER);
     if (index == -1) {
       return null;
@@ -175,7 +175,7 @@ public class ImmutableRangeMap<K extends Comparable<?>, V> implements RangeMap<K
   @Override
   @Nullable
   public Map.Entry<Range<K>, V> getEntry(K key) {
-    int index = SortedLists.binarySearch(ranges, Range.<K>lowerBoundFn(),
+    int index = SortedLists.binarySearch(ranges, Range<K>::lowerBound,
         Cut.belowValue(key), KeyPresentBehavior.ANY_PRESENT, KeyAbsentBehavior.NEXT_LOWER);
     if (index == -1) {
       return null;
@@ -233,10 +233,10 @@ public class ImmutableRangeMap<K extends Comparable<?>, V> implements RangeMap<K
       return this;
     }
     int lowerIndex = SortedLists.binarySearch(
-        ranges, Range.<K>upperBoundFn(), range.lowerBound,
+        ranges, Range<K>::upperBound, range.lowerBound,
         KeyPresentBehavior.FIRST_AFTER, KeyAbsentBehavior.NEXT_HIGHER);
     int upperIndex = SortedLists.binarySearch(ranges, 
-        Range.<K>lowerBoundFn(), range.upperBound,
+        Range<K>::lowerBound, range.upperBound,
         KeyPresentBehavior.ANY_PRESENT, KeyAbsentBehavior.NEXT_HIGHER);
     if (lowerIndex >= upperIndex) {
       return ImmutableRangeMap.of();

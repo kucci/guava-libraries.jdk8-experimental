@@ -20,7 +20,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.base.Equivalence;
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 
 import java.io.Serializable;
@@ -113,30 +112,6 @@ import javax.annotation.Nullable;
 @GwtCompatible
 @SuppressWarnings("rawtypes")
 public final class Range<C extends Comparable> implements Predicate<C>, Serializable {
-
-  private static final Function<Range, Cut> LOWER_BOUND_FN = new Function<Range, Cut>() {
-    @Override
-    public Cut apply(Range range) {
-      return range.lowerBound;
-    }
-  };
-
-  @SuppressWarnings("unchecked")
-  static <C extends Comparable<?>> Function<Range<C>, Cut<C>> lowerBoundFn() {
-    return (Function) LOWER_BOUND_FN;
-  }
-
-  private static final Function<Range, Cut> UPPER_BOUND_FN = new Function<Range, Cut>() {
-    @Override
-    public Cut apply(Range range) {
-      return range.upperBound;
-    }
-  };
-
-  @SuppressWarnings("unchecked")
-  static <C extends Comparable<?>> Function<Range<C>, Cut<C>> upperBoundFn() {
-    return (Function) UPPER_BOUND_FN;
-  }
 
   static final Ordering<Range<?>> RANGE_LEX_ORDERING = new Ordering<Range<?>>() {
     @Override
@@ -364,6 +339,14 @@ public final class Range<C extends Comparable> implements Predicate<C>, Serializ
     }
     this.lowerBound = checkNotNull(lowerBound);
     this.upperBound = checkNotNull(upperBound);
+  }
+
+  Cut<C> lowerBound() {
+    return lowerBound;
+  }
+
+  Cut<C> upperBound() {
+    return upperBound;
   }
 
   /**
