@@ -18,8 +18,6 @@ package com.google.common.collect;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Predicates.in;
-import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.CollectPreconditions.checkNonnegative;
 
 import com.google.common.annotations.Beta;
@@ -2517,16 +2515,16 @@ public final class Maps {
 
     @Override
     public boolean removeIf(Predicate<? super V> valuePredicate) {
-      return Iterables.removeIf(unfiltered.entrySet(),
+      return unfiltered.entrySet().removeIf(
           predicate.and(entry -> valuePredicate.test(entry.getValue())));
     }
 
     @Override public boolean removeAll(Collection<?> collection) {
-      return removeIf(in(collection));
+      return removeIf(collection::contains);
     }
 
     @Override public boolean retainAll(Collection<?> collection) {
-      return removeIf(not(in(collection)));
+      return removeIf(o -> !collection.contains(o));
     }
 
     @Override public Object[] toArray() {
@@ -2630,18 +2628,18 @@ public final class Maps {
       }
 
       @Override public boolean removeIf(Predicate<? super K> keyPredicate) {
-        return Iterables.removeIf(unfiltered.entrySet(),
+        return unfiltered.entrySet().removeIf(
             predicate.and(entry -> keyPredicate.test(entry.getKey())));
       }
 
       @Override
       public boolean removeAll(Collection<?> c) {
-        return removeIf(in(c));
+        return removeIf(c::contains);
       }
 
       @Override
       public boolean retainAll(Collection<?> c) {
-        return removeIf(not(in(c)));
+        return removeIf(o -> !c.contains(o));
       }
 
       @Override public Object[] toArray() {
